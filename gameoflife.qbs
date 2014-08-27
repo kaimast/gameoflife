@@ -11,7 +11,7 @@ CppApplication {
         qbs.install: true
     }
 
-    cpp.dynamicLibraries: ["SDL2"]
+    cpp.dynamicLibraries: ["SDL2", "SDL2_ttf"]
     cpp.cppFlags: ["-std=c++11"]
 }
 

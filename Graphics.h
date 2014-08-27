@@ -3,6 +3,7 @@
 
 #include "defines.h"
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_ttf.h>
 
 class Game;
 
@@ -21,6 +22,8 @@ private:
 
     SDL_Window* mWindow;
     SDL_Renderer *mRenderer;
+
+    TTF_Font* mFont;
 };
 
 #endif // GRAPHICS_H

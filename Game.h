@@ -30,6 +30,8 @@ public:
     //! Was a rectangle active in the last round?
     bool wasActive(const vector2& pos) const;
 
+    uint32_t getRoundNumber() const;
+
 private:
     int64_t toMapPos(const vector2& pos) const;
 
@@ -65,6 +67,11 @@ inline vector<const Tile*> Game::getActiveTiles() const
     }
 
     return result;
+}
+
+inline uint32_t Game::getRoundNumber() const
+{
+    return mRound;
 }
 
 #endif // GAME_H

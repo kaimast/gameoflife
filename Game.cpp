@@ -84,7 +84,6 @@ void Game::update()
     auto start = chrono::high_resolution_clock::now();
     mRound++;
 
-    cout << "Round " << mRound << endl;
     mGraphics->handleInput();
     mGraphics->draw();
 

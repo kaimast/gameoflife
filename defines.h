@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <stdint.h>
+#include <sstream>
 #include <memory>
 #include <assert.h>
 #include <stdexcept>
