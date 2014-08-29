@@ -3,11 +3,12 @@
 #include <chrono>
 #include <thread>
 
-void runGraphics(const Game& game, Graphics& graphics)
+void runGraphics(Game& game, Graphics& graphics)
 {
     if(!graphics.init())
     {
-        cout << "Failed to initialize grpahics..." << endl;
+        cout << "Failed to initialize graphics..." << endl;
+        game.stop();
         return;
     }
 
@@ -30,6 +31,17 @@ Game::~Game()
     {
         delete it.second;
     }
+}
+
+void Game::set(const vector2 &pos)
+{
+    auto mappos = toTilePosition(pos);
+    auto relpos = toRelativePosition(pos);
+
+    if(!hasTile(mappos))
+        createTile(mappos);
+
+    getTile(mappos).set(relpos);
 }
 
 void Game::increaseSpeed()
@@ -60,18 +72,14 @@ uint32_t Game::getSpeed() const
 
 void Game::createInitialSetup()
 {
-    // Initial Setup
-    createTile(vector2(0,0));
-    Tile &initialTile = getTile(vector2(0,0));
-
-    for(uint32_t i = 0; i < TILE_SIZE; ++i)
+    for(uint32_t i = 0; i < START_SIZE; ++i)
     {
-        for(uint32_t j = 0; j < TILE_SIZE; ++j)
+        for(uint32_t j = 0; j < START_SIZE; ++j)
         {
             bool active = rand() % 2;
 
             if(active)
-                initialTile.set(vector2(i,j));
+                set(vector2(20 + i, 20 + j));
         }
     }
 }

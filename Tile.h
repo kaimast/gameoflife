@@ -32,7 +32,11 @@ public:
 private:
     void updateRect(const vector2& pos);
 
+#ifdef PACK_TILE_CONTENT
     unique_ptr<uint8_t[]> mData;
+#else
+    unique_ptr<bool[]> mData;
+#endif
 
 #ifdef RECT_MAP
     //TODO find a nicer datastructure for this
@@ -56,16 +60,20 @@ inline const vector2 Tile::getRectPos() const
 
 inline bool Tile::inBoundaries(const vector2 &pos) const
 {
-    return (pos.X >= 0 && pos.X < TILE_SIZE) && (pos.Y >= 0 && pos.Y < TILE_SIZE);
+    return (pos.X >= 0 && pos.X < static_cast<int32_t>(TILE_SIZE)) && (pos.Y >= 0 && pos.Y < static_cast<int32_t>(TILE_SIZE));
 }
 
 inline bool Tile::get(const vector2& pos) const
 {
+#ifdef PACK_TILE_CONTENT
     uint32_t byteY = pos.Y / 8;
     uint32_t offY = pos.Y % 8;
 
     uint8_t val = mData[pos.X * TILE_BYTE_SIZE + byteY] & (1 << offY);
     return val != 0;
+#else
+    return mData[pos.X * TILE_SIZE + pos.Y];
+#endif
 }
 
 

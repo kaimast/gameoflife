@@ -22,6 +22,9 @@ public:
 
     void stop();
 
+    // Set a random tile active
+    void set(const vector2& pos);
+
     void createTile(const vector2& pos);
     Tile& getTile(const vector2& pos);
     const Tile& getTile(const vector2& pos) const;
@@ -58,7 +61,7 @@ private:
     std::thread mGraphicsThread;
 
     const uint32_t mSpeedStep = 50;
-    uint32_t mSpeed = 5 * mSpeedStep;
+    uint32_t mSpeed = 0 * mSpeedStep;
 
     bool mPaused = false;
 };

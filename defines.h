@@ -10,10 +10,15 @@
 
 using namespace std;
 
-const uint32_t TILE_BYTE_SIZE = 20;
+const uint32_t TILE_BYTE_SIZE = 5;
 const uint32_t TILE_SIZE = TILE_BYTE_SIZE * 8;
+
+const uint32_t START_SIZE = 200;
 
 // USE RECTMAP?
 //#define RECT_MAP
+
+// PACK TILE CONTENT?
+//#define PACK_TILE_CONTENT
 
 #endif // DEFINES_H
