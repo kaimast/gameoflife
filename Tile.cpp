@@ -11,9 +11,11 @@ Tile::Tile(const Game& game, const vector2& pos)
     mData = unique_ptr<uint8_t[]>(new uint8_t[datasize]);
     memset(mData.get(), 0, datasize);
 #else
+#ifndef RECT_MAP
     const auto datasize = TILE_SIZE * TILE_SIZE;
     mData = unique_ptr<bool[]>(new bool[datasize]);
     memset(mData.get(), 0, datasize);
+#endif
 #endif
 }
 
@@ -21,15 +23,15 @@ Tile* Tile::duplicate() const
 {
     Tile *newTile = new Tile(mGame, mPosition);
 
+#ifdef RECT_MAP
+    newTile->mActiveRects = mActiveRects;
+#else
 #ifdef PACK_TILE_CONTENT
     const auto datasize = TILE_SIZE * TILE_BYTE_SIZE;
 #else
     const auto datasize = TILE_SIZE * TILE_SIZE;
 #endif
-
     memcpy(newTile->mData.get(), mData.get(), datasize);
-#ifdef RECT_MAP
-    newTile->mActiveRects = mActiveRects;
 #endif
 
     return newTile;
@@ -39,8 +41,7 @@ void Tile::set(const vector2& pos)
 {
 #ifdef RECT_MAP
     mActiveRects[pos.toFlatInt()] = true;
-#endif
-
+#else
 #ifdef PACK_TILE_CONTENT
     uint32_t byteY = pos.Y / 8;
     uint32_t offY = pos.Y % 8;
@@ -48,6 +49,7 @@ void Tile::set(const vector2& pos)
     mData[pos.X * TILE_BYTE_SIZE + byteY] |= (1 << offY);
 #else
     mData[pos.X * TILE_SIZE + pos.Y] = true;
+#endif
 #endif
 }
 
@@ -58,8 +60,7 @@ void Tile::clear(const vector2& pos)
 
     if(it != mActiveRects.end())
         mActiveRects.erase(it);
-#endif
-
+#else
 #ifdef PACK_TILE_CONTENT
     uint32_t byteY = pos.Y / 8;
     uint32_t offY = pos.Y % 8;
@@ -67,6 +68,7 @@ void Tile::clear(const vector2& pos)
     mData[pos.X * TILE_BYTE_SIZE + byteY] &= ~(1 << offY);
 #else
     mData[pos.X * TILE_SIZE + pos.Y] = false;
+#endif
 #endif
 }
 

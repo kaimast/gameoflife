@@ -4,7 +4,7 @@
 #include "defines.h"
 #include "vector2.h"
 #include <vector>
-#include <map>
+#include <unordered_map>
 
 class Game;
 
@@ -32,16 +32,16 @@ public:
 private:
     void updateRect(const vector2& pos);
 
+#ifdef RECT_MAP
+    //TODO find a nicer datastructure for this
+    // value is not really needed...
+    unordered_map<uint64_t, bool> mActiveRects;
+#else
 #ifdef PACK_TILE_CONTENT
     unique_ptr<uint8_t[]> mData;
 #else
     unique_ptr<bool[]> mData;
 #endif
-
-#ifdef RECT_MAP
-    //TODO find a nicer datastructure for this
-    // value is not really needed...
-    map<uint64_t, bool> mActiveRects;
 #endif
 
     const Game& mGame;
@@ -65,6 +65,9 @@ inline bool Tile::inBoundaries(const vector2 &pos) const
 
 inline bool Tile::get(const vector2& pos) const
 {
+#ifdef RECT_MAP
+    return mActiveRects.find(pos.toFlatInt()) != mActiveRects.end();
+#else
 #ifdef PACK_TILE_CONTENT
     uint32_t byteY = pos.Y / 8;
     uint32_t offY = pos.Y % 8;
@@ -73,6 +76,7 @@ inline bool Tile::get(const vector2& pos) const
     return val != 0;
 #else
     return mData[pos.X * TILE_SIZE + pos.Y];
+#endif
 #endif
 }
 

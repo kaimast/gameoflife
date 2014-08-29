@@ -22,6 +22,7 @@ private:
     void drawText(const string& text, const vector2& pos);
 
     vector2 mPosition = vector2(0,0);
+    float mScale = 5.0;
 
     Game& mGame;
 

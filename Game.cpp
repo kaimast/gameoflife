@@ -160,6 +160,8 @@ void Game::doGameLogic()
     }
 
     // garbe collect empty tiles
+    // prevent render thread from reading while we clean up
+    mRendering.lock();
     for(auto it = mTiles.begin(); it != mTiles.end();)
     {
         if(!it->second->hasActiveRects())
@@ -167,6 +169,7 @@ void Game::doGameLogic()
         else
             ++it;
     }
+    mRendering.unlock();
 
     mOldTiles.clear();
 }

@@ -3,7 +3,9 @@
 
 #include <map>
 #include <vector>
+#include <mutex>
 #include <thread>
+#include <unordered_map>
 
 #include "defines.h"
 #include "vector2.h"
@@ -48,6 +50,9 @@ public:
 
     uint32_t getRoundNumber() const;
 
+    void notifyRenderStart();
+    void notifyRenderStop();
+
 private:
     void doGameLogic();
     void createInitialSetup();
@@ -55,7 +60,7 @@ private:
     bool mOk = true;
     uint32_t mRound = 0;
 
-    map<int64_t, Tile*> mTiles, mOldTiles;
+    unordered_map<int64_t, Tile*> mTiles, mOldTiles;
     unique_ptr<Graphics> mGraphics;
 
     std::thread mGraphicsThread;
@@ -64,6 +69,8 @@ private:
     uint32_t mSpeed = 0 * mSpeedStep;
 
     bool mPaused = false;
+
+    std::mutex mRendering;
 };
 
 inline bool Game::isOk() const
@@ -82,6 +89,16 @@ inline bool Game::hasPreviousTile(const vector2 &pos) const
     auto it = mOldTiles.find(key);
 
     return (it != mOldTiles.end());
+}
+
+inline void Game::notifyRenderStart()
+{
+    mRendering.lock();
+}
+
+inline void Game::notifyRenderStop()
+{
+    mRendering.unlock();
 }
 
 inline vector<const Tile*> Game::getActiveTiles() const

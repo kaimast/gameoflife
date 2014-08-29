@@ -34,6 +34,12 @@ void Graphics::handleInput()
             case SDLK_l:
                 mGame.decreaseSpeed();
                 break;
+            case SDLK_i:
+                mScale += 0.25;
+                break;
+            case SDLK_o:
+                mScale -= 0.25;
+                break;
             case SDLK_LEFT:
                 mPosition.X -= 1;
                 break;
@@ -59,6 +65,8 @@ void Graphics::handleInput()
 
 void Graphics::draw()
 {
+    mGame.notifyRenderStart();
+
     SDL_SetRenderDrawColor(mRenderer, 0,0,0, 255);
     SDL_RenderClear(mRenderer);
 
@@ -75,7 +83,7 @@ void Graphics::draw()
             int32_t x = root.X + rect.X - mPosition.X;
             int32_t y = root.Y + rect.Y - mPosition.Y;
 
-            const auto scale = 5;
+            const auto scale = mScale;
 
             SDL_Rect sdlrect = {x * scale, y * scale, scale, scale};
             SDL_RenderFillRect(mRenderer, &sdlrect);
@@ -98,6 +106,8 @@ void Graphics::draw()
     drawText(speed.str(), vector2(300, 5));
 
     SDL_RenderPresent(mRenderer);
+
+    mGame.notifyRenderStop();
 }
 
 void Graphics::drawText(const string& text, const vector2& pos)
