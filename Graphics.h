@@ -2,6 +2,7 @@
 #define GRAPHICS_H
 
 #include "defines.h"
+#include "vector2.h"
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 
@@ -18,6 +19,10 @@ public:
     void draw();
 
 private:
+    void drawText(const string& text, const vector2& pos);
+
+    vector2 mPosition = vector2(0,0);
+
     Game& mGame;
 
     SDL_Window* mWindow;

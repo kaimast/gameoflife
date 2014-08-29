@@ -1,7 +1,7 @@
 import qbs
 
 CppApplication {
-    type: "application" // To suppress bundle generation on Mac
+    type: "application"
     consoleApplication: true
     files: ["main.cpp", "Game.h", "Game.cpp", "Tile.h",
         "Tile.cpp", "Graphics.h", "Graphics.cpp", "defines.h", "vector2.h"]
@@ -11,7 +11,7 @@ CppApplication {
         qbs.install: true
     }
 
-    cpp.dynamicLibraries: ["SDL2", "SDL2_ttf"]
+    cpp.dynamicLibraries: ["SDL2", "SDL2_ttf", "pthread"]
     cpp.cppFlags: ["-std=c++11"]
 }
 

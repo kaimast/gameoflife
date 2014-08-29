@@ -3,6 +3,8 @@
 
 #include <map>
 #include <vector>
+#include <thread>
+
 #include "defines.h"
 #include "vector2.h"
 #include "Tile.h"
@@ -20,10 +22,21 @@ public:
 
     void stop();
 
-    Tile& createTile(const vector2& pos);
+    void createTile(const vector2& pos);
     Tile& getTile(const vector2& pos);
     const Tile& getTile(const vector2& pos) const;
     bool hasTile(const vector2& pos) const;
+
+    const Tile& getPreviousTile(const vector2& pos) const;
+    bool hasPreviousTile(const vector2& pos) const;
+
+    void increaseSpeed();
+    void decreaseSpeed();
+
+    bool isPaused() const;
+    void togglePaused();
+
+    uint32_t getSpeed() const;
 
     vector<const Tile*> getActiveTiles() const;
 
@@ -33,13 +46,21 @@ public:
     uint32_t getRoundNumber() const;
 
 private:
-    int64_t toMapPos(const vector2& pos) const;
+    void doGameLogic();
+    void createInitialSetup();
 
     bool mOk = true;
     uint32_t mRound = 0;
 
     map<int64_t, Tile*> mTiles, mOldTiles;
     unique_ptr<Graphics> mGraphics;
+
+    std::thread mGraphicsThread;
+
+    const uint32_t mSpeedStep = 50;
+    uint32_t mSpeed = 5 * mSpeedStep;
+
+    bool mPaused = false;
 };
 
 inline bool Game::isOk() const
@@ -52,9 +73,12 @@ inline void Game::stop()
     mOk = false;
 }
 
-inline int64_t Game::toMapPos(const vector2& pos) const
+inline bool Game::hasPreviousTile(const vector2 &pos) const
 {
-    return (static_cast<uint64_t>(pos.X) << sizeof(uint32_t)*8) + pos.Y;
+    auto key = pos.toFlatInt();
+    auto it = mOldTiles.find(key);
+
+    return (it != mOldTiles.end());
 }
 
 inline vector<const Tile*> Game::getActiveTiles() const

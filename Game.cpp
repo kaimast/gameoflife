@@ -3,11 +3,76 @@
 #include <chrono>
 #include <thread>
 
+void runGraphics(const Game& game, Graphics& graphics)
+{
+    if(!graphics.init())
+    {
+        cout << "Failed to initialize grpahics..." << endl;
+        return;
+    }
+
+    while(game.isOk())
+    {
+        graphics.handleInput();
+        graphics.draw();
+
+        chrono::milliseconds dur(50);
+        this_thread::sleep_for(dur);
+    }
+}
+
 Game::~Game()
 {
+    mOk = false;
+    mGraphicsThread.join();
+
     for(auto it: mTiles)
     {
         delete it.second;
+    }
+}
+
+void Game::increaseSpeed()
+{
+    mSpeed += mSpeedStep;
+}
+
+void Game::decreaseSpeed()
+{
+    if(mSpeed > 0)
+        mSpeed -= mSpeedStep;
+}
+
+bool Game::isPaused() const
+{
+    return mPaused;
+}
+
+void Game::togglePaused()
+{
+    mPaused = !mPaused;
+}
+
+uint32_t Game::getSpeed() const
+{
+    return mSpeed;
+}
+
+void Game::createInitialSetup()
+{
+    // Initial Setup
+    createTile(vector2(0,0));
+    Tile &initialTile = getTile(vector2(0,0));
+
+    for(uint32_t i = 0; i < TILE_SIZE; ++i)
+    {
+        for(uint32_t j = 0; j < TILE_SIZE; ++j)
+        {
+            bool active = rand() % 2;
+
+            if(active)
+                initialTile.set(vector2(i,j));
+        }
     }
 }
 
@@ -16,44 +81,20 @@ bool Game::init()
     // Create Subsystems
     mGraphics = unique_ptr<Graphics>{new Graphics(*this)};
 
-    if(!mGraphics->init())
-        return false;
+    createInitialSetup();
 
-    // Initial Setup
-    Tile& initialTile = createTile(vector2(0,0));
-
-    initialTile.set(vector2(10,10));
-    initialTile.set(vector2(10,11));
-    initialTile.set(vector2(10,12));
-    initialTile.set(vector2(10,13));
-    initialTile.set(vector2(10,14));
-
-    initialTile.set(vector2(11,10));
-    initialTile.set(vector2(11,12));
-    initialTile.set(vector2(11,14));
-
-    initialTile.set(vector2(12,10));
-    initialTile.set(vector2(12,11));
-    initialTile.set(vector2(12,12));
-    initialTile.set(vector2(12,13));
-    initialTile.set(vector2(12,14));
-
-
-    initialTile.set(vector2(13,10));
-    initialTile.set(vector2(14,10));
-    initialTile.set(vector2(15,10));
-    initialTile.set(vector2(16,10));
-    initialTile.set(vector2(16,11));\
+    mGraphicsThread = std::thread(runGraphics, std::ref(*this), std::ref(*mGraphics));
 
     return true;
 }
 
-Tile& Game::createTile(const vector2 &pos)
+void Game::createTile(const vector2 &pos)
 {
-    Tile* tile = new Tile(*this, pos);
+    if(hasTile(pos))
+        return;
 
-    mTiles[toMapPos(pos)] = tile;
-    return getTile(pos);
+    Tile* tile = new Tile(*this, pos);
+    mTiles[pos.toFlatInt()] = tile;
 }
 
 bool Game::wasActive(const vector2& pos) const
@@ -61,8 +102,7 @@ bool Game::wasActive(const vector2& pos) const
     vector2 tilePos = toTilePosition(pos);
     vector2 relPos = toRelativePosition(pos);
 
-    auto mappos = toMapPos(tilePos);
-    auto it = mOldTiles.find(mappos);
+    auto it = mOldTiles.find(tilePos.toFlatInt());
 
     if(it == mOldTiles.end())
         return false;
@@ -72,25 +112,32 @@ bool Game::wasActive(const vector2& pos) const
 
 bool Game::hasTile(const vector2& pos) const
 {
-    auto mappos = toMapPos(pos);
-
-    return mTiles.find(mappos) != mTiles.end();
+    return mTiles.find(pos.toFlatInt()) != mTiles.end();
 }
 
-void Game::update()
+void Game::doGameLogic()
 {
-    const auto speed = 50;
-
-    auto start = chrono::high_resolution_clock::now();
     mRound++;
-
-    mGraphics->handleInput();
-    mGraphics->draw();
 
     // set up old tiles
     for(auto it: mTiles)
     {
         mOldTiles[it.first] = it.second->duplicate();
+    }
+
+    // create border tlies
+    for(auto it: mOldTiles)
+    {
+        auto pos = it.second->getPosition();
+
+        createTile(pos + vector2(1,0));
+        createTile(pos + vector2(1,1));
+        createTile(pos + vector2(1,-1));
+        createTile(pos + vector2(0,1));
+        createTile(pos + vector2(0,-1));
+        createTile(pos + vector2(-1,0));
+        createTile(pos + vector2(-1,1));
+        createTile(pos + vector2(-1,-1));
     }
 
     for(auto it: mTiles)
@@ -104,10 +151,27 @@ void Game::update()
         delete it.second;
     }
 
+    // garbe collect empty tiles
+    for(auto it = mTiles.begin(); it != mTiles.end();)
+    {
+        if(!it->second->hasActiveRects())
+            it = mTiles.erase(it);
+        else
+            ++it;
+    }
+
     mOldTiles.clear();
+}
+
+void Game::update()
+{
+    auto start = chrono::high_resolution_clock::now();
+
+    if(!mPaused)
+        doGameLogic();
 
     auto diff = chrono::duration_cast<chrono::milliseconds>(chrono::high_resolution_clock::now() - start);
-    auto sleeptime = diff.count() - speed;
+    auto sleeptime = mSpeed - diff.count();
 
     if(sleeptime > 0) {
         chrono::milliseconds dur(sleeptime);
@@ -117,15 +181,32 @@ void Game::update()
 
 Tile& Game::getTile(const vector2& pos)
 {
-    return *mTiles[toMapPos(pos)];
+    auto key = pos.toFlatInt();
+    auto it = mTiles.find(key);
+
+    if(it == mTiles.end())
+        throw std::runtime_error("No such tile");
+
+    return *it->second;
 }
 
 const Tile& Game::getTile(const vector2& pos) const
 {
-    auto key = toMapPos(pos);
+    auto key = pos.toFlatInt();
     auto it = mTiles.find(key);
 
     if(it == mTiles.end())
+        throw std::runtime_error("No such tile");
+
+    return *it->second;
+}
+
+const Tile& Game::getPreviousTile(const vector2& pos) const
+{
+    auto key = pos.toFlatInt();
+    auto it = mOldTiles.find(key);
+
+    if(it == mOldTiles.end())
         throw std::runtime_error("No such tile");
 
     return *it->second;

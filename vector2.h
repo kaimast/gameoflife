@@ -10,6 +10,12 @@ public:
     {
     }
 
+    vector2(int64_t flatInt)
+    {
+        X = static_cast<int32_t>(flatInt >> sizeof(uint32_t)*8);
+        Y = static_cast<int32_t>(flatInt);
+    }
+
     int32_t X;
     int32_t Y;
 
@@ -21,6 +27,11 @@ public:
     vector2 operator+(const vector2& other) const
     {
         return vector2(X + other.X, Y + other.Y);
+    }
+
+    inline int64_t toFlatInt() const
+    {
+        return (static_cast<uint64_t>(X) << sizeof(uint32_t)*8) + Y;
     }
 };
 

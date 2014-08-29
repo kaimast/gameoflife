@@ -22,6 +22,32 @@ void Graphics::handleInput()
     {
         switch(e.type)
         {
+        case SDL_KEYDOWN:
+            switch(e.key.keysym.sym)
+            {
+            case SDLK_p:
+                mGame.togglePaused();
+                break;
+            case SDLK_k:
+                mGame.increaseSpeed();
+                break;
+            case SDLK_l:
+                mGame.decreaseSpeed();
+                break;
+            case SDLK_LEFT:
+                mPosition.X -= 1;
+                break;
+            case SDLK_RIGHT:
+                mPosition.X += 1;
+                break;
+            case SDLK_DOWN:
+                mPosition.Y += 1;
+                break;
+            case SDLK_UP:
+                mPosition.Y -= 1;
+                break;
+            }
+            break;
         case SDL_QUIT:
             mGame.stop();
             break;
@@ -46,8 +72,8 @@ void Graphics::draw()
 
         for(vector2 rect: tile->getActiveRects())
         {
-            int32_t x = root.X + rect.X;
-            int32_t y = root.Y + rect.Y;
+            int32_t x = root.X + rect.X - mPosition.X;
+            int32_t y = root.Y + rect.Y - mPosition.Y;
 
             const auto scale = 5;
 
@@ -56,23 +82,39 @@ void Graphics::draw()
         }
     }
 
-    stringstream text;
-    text << "Generation #" << mGame.getRoundNumber();
+    stringstream generation;
+    generation << "Generation #" << mGame.getRoundNumber();
 
+    drawText(generation.str(), vector2(5,5));
+
+    stringstream speed;
+    speed << "(Minimum) Round Length: ";
+
+    if(mGame.getSpeed() == 0)
+        speed << "unlimited";
+    else
+        speed << mGame.getSpeed() << "ms";
+
+    drawText(speed.str(), vector2(300, 5));
+
+    SDL_RenderPresent(mRenderer);
+}
+
+void Graphics::drawText(const string& text, const vector2& pos)
+{
     SDL_Color col = {255,255,255,255};
     SDL_Color bg = {0,0,0,0};
-    SDL_Surface *text_surface = TTF_RenderText_Shaded(mFont, text.str().c_str(), col, bg);
+    SDL_Surface *text_surface = TTF_RenderText_Shaded(mFont, text.c_str(), col, bg);
 
     SDL_Texture *texture = SDL_CreateTextureFromSurface(mRenderer, text_surface);
     SDL_FreeSurface(text_surface);
 
-    int w = 200;
-    int h = 30;
-    SDL_Rect src = {0,0, w,h};
-    SDL_Rect dst = {5,5, w,h};
-    SDL_RenderCopy(mRenderer, texture, &src, &dst);
+    int w = 0,h = 0;
+    TTF_SizeText(mFont, text.c_str(), &w, &h);
 
-    SDL_RenderPresent(mRenderer);
+    SDL_Rect src = {0,0, w,h};
+    SDL_Rect dst = {pos.X, pos.Y, w,h};
+    SDL_RenderCopy(mRenderer, texture, &src, &dst);
 }
 
 bool Graphics::init()
@@ -98,7 +140,7 @@ bool Graphics::init()
     }
 
     TTF_Init();
-    mFont = TTF_OpenFont("./DejaVuSerif.ttf", 25);
+    mFont = TTF_OpenFont("./DejaVuSerif.ttf", 15);
 
     if(!mFont)
     {
