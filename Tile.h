@@ -27,6 +27,8 @@ public:
 
     Tile* duplicate() const;
 
+    bool inBoundaries(const vector2& pos) const;
+
 private:
     void updateRect(const vector2& pos);
 
@@ -51,5 +53,20 @@ inline const vector2 Tile::getRectPos() const
 {
     return vector2(mPosition.X * TILE_SIZE, mPosition.Y * TILE_SIZE);
 }
+
+inline bool Tile::inBoundaries(const vector2 &pos) const
+{
+    return (pos.X >= 0 && pos.X < TILE_SIZE) && (pos.Y >= 0 && pos.Y < TILE_SIZE);
+}
+
+inline bool Tile::get(const vector2& pos) const
+{
+    uint32_t byteY = pos.Y / 8;
+    uint32_t offY = pos.Y % 8;
+
+    uint8_t val = mData[pos.X * TILE_BYTE_SIZE + byteY] & (1 << offY);
+    return val != 0;
+}
+
 
 #endif // TILE_H

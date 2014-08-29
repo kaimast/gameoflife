@@ -52,15 +52,6 @@ void Tile::clear(const vector2& pos)
     mData[pos.X * TILE_BYTE_SIZE + byteY] &= ~(1 << offY);
 }
 
-bool Tile::get(const vector2& pos) const
-{
-    uint32_t byteY = pos.Y / 8;
-    uint32_t offY = pos.Y % 8;
-
-    uint8_t val = mData[pos.X * TILE_BYTE_SIZE + byteY] & (1 << offY);
-    return val != 0;
-}
-
 bool Tile::hasActiveRects() const
 {
 #ifdef RECT_MAP
@@ -106,12 +97,6 @@ vector<vector2> Tile::getActiveRects() const
 
 void Tile::update()
 {
-#ifdef RECT_MAP
-    vector<vector2> previous = mGame.getPreviousTile(mPosition).getActiveRects();
-
-    for(auto it: previous)
-        updateRect(it);
-#else
     for(uint32_t x = 0; x < TILE_SIZE; ++x)
     {
         for(uint32_t y = 0; y < TILE_SIZE; ++y)
@@ -119,23 +104,33 @@ void Tile::update()
             updateRect(vector2(x,y));
         }
     }
-#endif
 }
 
 void Tile::updateRect(const vector2& pos)
 {
     uint32_t count = 0;
-    vector2 root = getRectPos() + pos;
+    const Tile* previous = nullptr;
 
-    count += mGame.wasActive(root + vector2(-1,0));
-    count += mGame.wasActive(root + vector2(1,0));
-    count += mGame.wasActive(root + vector2(0,1));
-    count += mGame.wasActive(root + vector2(0,-1));
+    if(mGame.hasPreviousTile(mPosition))
+        previous = &mGame.getPreviousTile(mPosition);
 
-    count += mGame.wasActive(root + vector2(-1,-1));
-    count += mGame.wasActive(root + vector2(-1,1));
-    count += mGame.wasActive(root + vector2(1,1));
-    count += mGame.wasActive(root + vector2(1,-1));
+    for(int32_t i = -1; i <= 1; ++i)
+    {
+        for(int32_t j = -1; j <= 1; ++j)
+        {
+            if(i == 0 && j == 0)
+                continue;
+
+            vector2 cpos = vector2(i,j) + pos;
+            if(inBoundaries(cpos))
+            {
+                if(previous)
+                    count += previous->get(cpos);
+            }
+            else
+                count += mGame.wasActive(getRectPos() + cpos);
+        }
+    }
 
     if(count < 2) {
         // Underpopulation
