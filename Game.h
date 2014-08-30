@@ -11,6 +11,7 @@
 #include "vector2.h"
 #include "Tile.h"
 #include "Graphics.h"
+#include "TileUpdater.h"
 
 class Game
 {

@@ -148,10 +148,8 @@ void Game::doGameLogic()
         createTile(pos + vector2(-1,-1));
     }
 
-    for(auto it: mTiles)
-    {
-        it.second->update();
-    }
+    TileUpdater updater(*this);
+    updater.update(mTiles);
 
     //clear old tiles
     for(auto it: mOldTiles)
