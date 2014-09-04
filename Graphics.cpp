@@ -22,6 +22,15 @@ void Graphics::handleInput()
     {
         switch(e.type)
         {
+        case SDL_MOUSEWHEEL:
+            mScale += e.wheel.y * 0.1;
+            break;
+        case SDL_MOUSEMOTION:
+            if(e.motion.state & SDL_BUTTON(1)) {
+                mPosition.X -= e.motion.xrel * 0.1 * mScale * mScale;
+                mPosition.Y -= e.motion.yrel * 0.1 * mScale * mScale;
+            }
+            break;
         case SDL_KEYDOWN:
             switch(e.key.keysym.sym)
             {
@@ -85,7 +94,9 @@ void Graphics::draw()
 
             const auto scale = mScale;
 
-            SDL_Rect sdlrect = {x * scale, y * scale, scale, scale};
+            int32_t size = max<int32_t>(scale, 1);
+
+            SDL_Rect sdlrect = {x * scale, y * scale, size, size};
             SDL_RenderFillRect(mRenderer, &sdlrect);
         }
     }
