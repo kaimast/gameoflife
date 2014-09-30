@@ -22,10 +22,18 @@ void runGraphics(Game& game, Graphics& graphics)
     }
 }
 
+Game::Game(bool benchmark, uint32_t tileSize, uint32_t initialSeed)
+    : mTileUpdater(*this), mIsBenchmarking(benchmark), mTileSize(tileSize), mInitialSeed(initialSeed)
+{
+}
+
 Game::~Game()
 {
     mOk = false;
-    mGraphicsThread.join();
+
+    // Check if graphics are enabled...
+    if(mGraphics)
+        mGraphicsThread.join();
 
     for(auto it: mTiles)
     {
@@ -35,8 +43,8 @@ Game::~Game()
 
 void Game::set(const vector2 &pos)
 {
-    auto mappos = toTilePosition(pos);
-    auto relpos = toRelativePosition(pos);
+    auto mappos = toTilePosition(pos, mTileSize);
+    auto relpos = toRelativePosition(pos, mTileSize);
 
     if(!hasTile(mappos))
         createTile(mappos);
@@ -72,9 +80,11 @@ uint32_t Game::getSpeed() const
 
 void Game::createInitialSetup()
 {
-    for(uint32_t i = 0; i < START_SIZE; ++i)
+    cout << "Starting with a grid of " << mInitialSeed << "x" << mInitialSeed << " tiles" << endl;
+
+    for(uint32_t i = 0; i < mInitialSeed; ++i)
     {
-        for(uint32_t j = 0; j < START_SIZE; ++j)
+        for(uint32_t j = 0; j < mInitialSeed; ++j)
         {
             bool active = rand() % 2;
 
@@ -84,14 +94,15 @@ void Game::createInitialSetup()
     }
 }
 
-bool Game::init()
+bool Game::init(bool showGraphics)
 {
-    // Create Subsystems
-    mGraphics = unique_ptr<Graphics>{new Graphics(*this)};
+    if(showGraphics)
+    {
+        mGraphics = unique_ptr<Graphics>{new Graphics(*this)};
+        mGraphicsThread = std::thread(runGraphics, std::ref(*this), std::ref(*mGraphics));
+    }
 
     createInitialSetup();
-
-    mGraphicsThread = std::thread(runGraphics, std::ref(*this), std::ref(*mGraphics));
 
     return true;
 }
@@ -107,8 +118,8 @@ void Game::createTile(const vector2 &pos)
 
 bool Game::wasActive(const vector2& pos) const
 {
-    vector2 tilePos = toTilePosition(pos);
-    vector2 relPos = toRelativePosition(pos);
+    vector2 tilePos = toTilePosition(pos, mTileSize);
+    vector2 relPos = toRelativePosition(pos, mTileSize);
 
     auto it = mOldTiles.find(tilePos.toFlatInt());
 
@@ -148,8 +159,7 @@ void Game::doGameLogic()
         createTile(pos + vector2(-1,-1));
     }
 
-    TileUpdater updater(*this);
-    updater.update(mTiles);
+    mTileUpdater.update(mTiles);
 
     //clear old tiles
     for(auto it: mOldTiles)
@@ -176,8 +186,16 @@ void Game::update()
 {
     auto start = chrono::high_resolution_clock::now();
 
-    if(!mPaused)
+    if(!mPaused) {
+        benchmark.generationStart();
         doGameLogic();
+        benchmark.generationDone();
+     }
+
+    if(benchmark.isDone() && mIsBenchmarking) {
+        this->stop();
+        return;
+    }
 
     auto diff = chrono::duration_cast<chrono::milliseconds>(chrono::high_resolution_clock::now() - start);
     auto sleeptime = mSpeed - diff.count();

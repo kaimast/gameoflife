@@ -92,11 +92,9 @@ void Graphics::draw()
             int32_t x = root.X + rect.X - mPosition.X;
             int32_t y = root.Y + rect.Y - mPosition.Y;
 
-            const auto scale = mScale;
+            int32_t size = max<int32_t>(mScale, 1);
 
-            int32_t size = max<int32_t>(scale, 1);
-
-            SDL_Rect sdlrect = {x * scale, y * scale, size, size};
+            SDL_Rect sdlrect = {x * mScale, y * mScale, size, size};
             SDL_RenderFillRect(mRenderer, &sdlrect);
         }
     }

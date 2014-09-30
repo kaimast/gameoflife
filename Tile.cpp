@@ -4,18 +4,12 @@
 #include <string.h>
 
 Tile::Tile(const Game& game, const vector2& pos)
-    : mGame(game), mPosition(pos)
+    : mGame(game), mPosition(pos), mTileSize(mGame.getTileSize())
 {
-#ifdef PACK_TILE_CONTENT
-    const auto datasize = TILE_SIZE * TILE_BYTE_SIZE;
-    mData = unique_ptr<uint8_t[]>(new uint8_t[datasize]);
-    memset(mData.get(), 0, datasize);
-#else
 #ifndef RECT_MAP
-    const auto datasize = TILE_SIZE * TILE_SIZE;
+    const auto datasize = mTileSize * mTileSize;
     mData = unique_ptr<bool[]>(new bool[datasize]);
     memset(mData.get(), 0, datasize);
-#endif
 #endif
 }
 
@@ -26,11 +20,7 @@ Tile* Tile::duplicate() const
 #ifdef RECT_MAP
     newTile->mActiveRects = mActiveRects;
 #else
-#ifdef PACK_TILE_CONTENT
-    const auto datasize = TILE_SIZE * TILE_BYTE_SIZE;
-#else
-    const auto datasize = TILE_SIZE * TILE_SIZE;
-#endif
+    const auto datasize = mTileSize * mTileSize;
     memcpy(newTile->mData.get(), mData.get(), datasize);
 #endif
 
@@ -42,14 +32,7 @@ void Tile::set(const vector2& pos)
 #ifdef RECT_MAP
     mActiveRects[pos.toFlatInt()] = true;
 #else
-#ifdef PACK_TILE_CONTENT
-    uint32_t byteY = pos.Y / 8;
-    uint32_t offY = pos.Y % 8;
-
-    mData[pos.X * TILE_BYTE_SIZE + byteY] |= (1 << offY);
-#else
-    mData[pos.X * TILE_SIZE + pos.Y] = true;
-#endif
+    mData[pos.X * mTileSize + pos.Y] = true;
 #endif
 }
 
@@ -61,14 +44,7 @@ void Tile::clear(const vector2& pos)
     if(it != mActiveRects.end())
         mActiveRects.erase(it);
 #else
-#ifdef PACK_TILE_CONTENT
-    uint32_t byteY = pos.Y / 8;
-    uint32_t offY = pos.Y % 8;
-
-    mData[pos.X * TILE_BYTE_SIZE + byteY] &= ~(1 << offY);
-#else
-    mData[pos.X * TILE_SIZE + pos.Y] = false;
-#endif
+    mData[pos.X * mTileSize + pos.Y] = false;
 #endif
 }
 
@@ -77,19 +53,11 @@ bool Tile::hasActiveRects() const
 #ifdef RECT_MAP
     return mActiveRects.size() > 0;
 #else
-#ifdef PACK_TILE_CONTENT
-    for(uint32_t i = 0; i < TILE_BYTE_SIZE * TILE_SIZE; ++i)
-    {
-        if(mData[i] != 0)
-            return true;
-    }
-#else
-    for(uint32_t i = 0; i < TILE_BYTE_SIZE * TILE_SIZE; ++i)
+    for(uint32_t i = 0; i < mTileSize * mTileSize; ++i)
     {
         if(mData[i])
             return true;
     }
-#endif
 
     return false;
 #endif
@@ -105,9 +73,9 @@ vector<vector2> Tile::getActiveRects() const
         result.push_back(vector2(it.first));
     }
 #else
-    for(uint32_t x = 0; x < TILE_SIZE; ++x)
+    for(uint32_t x = 0; x < mTileSize; ++x)
     {
-        for(uint32_t y = 0; y < TILE_SIZE; ++y)
+        for(uint32_t y = 0; y < mTileSize; ++y)
         {
             if(get(vector2(x,y)))
                 result.push_back(vector2(x,y));
@@ -120,9 +88,9 @@ vector<vector2> Tile::getActiveRects() const
 
 void Tile::update()
 {
-    for(uint32_t x = 0; x < TILE_SIZE; ++x)
+    for(uint32_t x = 0; x < mGame.getTileSize(); ++x)
     {
-        for(uint32_t y = 0; y < TILE_SIZE; ++y)
+        for(uint32_t y = 0; y < mGame.getTileSize(); ++y)
         {
             updateRect(vector2(x,y));
         }

@@ -12,13 +12,15 @@
 #include "Tile.h"
 #include "Graphics.h"
 #include "TileUpdater.h"
+#include "Benchmark.h"
 
 class Game
 {
 public:
+    Game(bool benchmark, uint32_t tileSize, uint32_t initialSeed);
     ~Game();
 
-    bool init();
+    bool init(bool graphics);
 
     void update();
     bool isOk() const;
@@ -35,6 +37,8 @@ public:
 
     const Tile& getPreviousTile(const vector2& pos) const;
     bool hasPreviousTile(const vector2& pos) const;
+
+    uint32_t getTileSize() const;
 
     void increaseSpeed();
     void decreaseSpeed();
@@ -58,8 +62,16 @@ private:
     void doGameLogic();
     void createInitialSetup();
 
+    TileUpdater mTileUpdater;
+
     bool mOk = true;
     uint32_t mRound = 0;
+
+    Benchmark benchmark;
+    const bool mIsBenchmarking;
+
+    const uint32_t mTileSize;
+    const uint32_t mInitialSeed;
 
     unordered_map<int64_t, Tile*> mTiles, mOldTiles;
     unique_ptr<Graphics> mGraphics;
@@ -112,6 +124,11 @@ inline vector<const Tile*> Game::getActiveTiles() const
     }
 
     return result;
+}
+
+inline uint32_t Game::getTileSize() const
+{
+    return mTileSize;
 }
 
 inline uint32_t Game::getRoundNumber() const

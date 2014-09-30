@@ -35,19 +35,19 @@ public:
     }
 };
 
-inline vector2 toTilePosition(const vector2& pos)
+inline vector2 toTilePosition(const vector2& pos, uint32_t tileSize)
 {
     float x = pos.X;
     float y = pos.Y;
 
-    vector2 tilepos(floor(x / TILE_SIZE), floor(y / TILE_SIZE));
+    vector2 tilepos(floor(x / tileSize), floor(y / tileSize));
     return tilepos;
 }
 
-inline vector2 toRelativePosition(const vector2& pos)
+inline vector2 toRelativePosition(const vector2& pos, uint32_t tileSize)
 {
-    vector2 tilePos = toTilePosition(pos);
-    return vector2(pos.X - tilePos.X * TILE_SIZE, pos.Y - tilePos.Y * TILE_SIZE);
+    vector2 tilePos = toTilePosition(pos, tileSize);
+    return vector2(pos.X - tilePos.X * tileSize, pos.Y - tilePos.Y * tileSize);
 }
 
 #endif // VECTOR2_H
